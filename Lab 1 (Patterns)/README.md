@@ -82,13 +82,13 @@ This is useful when an object has many optional parameters, validation rules, an
 
 ```mermaid
 flowchart LR
-  A[NewCueBuilder(name)] --> B[StartsIn()]
-  B --> C[BPM()]
-  C --> D[LightPreset()]
-  D --> E[SmokeLevelPct()]
-  E --> F[ScreenText()]
-  F --> G[Tag()]
-  G --> H[Build() -> ShowCue]
+  A[NewCueBuilder] --> B[StartsIn]
+  B --> C[Set BPM]
+  C --> D[Set LightPreset]
+  D --> E[Set SmokeLevel]
+  E --> F[Set ScreenText]
+  F --> G[Add Tags]
+  G --> H[Build ShowCue]
 ```
 
 #### Why this Builder is Go-friendly
