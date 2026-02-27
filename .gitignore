@@ -1,32 +1,109 @@
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
-# Binaries for programs and plugins
+# =========================
+# JetBrains / GoLand
+# =========================
+.idea/
+*.iml
+
+# JetBrains local history / misc
+**/.idea/**/workspace.xml
+**/.idea/**/tasks.xml
+**/.idea/**/usage.statistics.xml
+**/.idea/**/dictionaries
+**/.idea/**/shelf
+
+# GoLand run configurations, local settings
+**/.idea/**/runConfigurations
+**/.idea/**/httpRequests
+
+# =========================
+# OS junk
+# =========================
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# =========================
+# Go build artifacts
+# =========================
+# Binaries
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
 
-# Test binary, built with `go test -c`
+# Test binary / coverage / profiles
 *.test
-
-# Code coverage profiles and other test artifacts
 *.out
-coverage.*
+*.prof
 *.coverprofile
-profile.cov
+coverage.*
+cover.out
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# =========================
+# Logs / temp
+# =========================
+*.log
+*.tmp
+*.temp
+tmp/
+temp/
+out/
+bin/
+dist/
+build/
 
-# Go workspace file
-go.work
-go.work.sum
+# =========================
+# Node / JS / TS
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# env file
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+.svelte-kit/
+.vite/
+.vite-cache/
+.cache/
+.parcel-cache/
+.turbo/
+.eslintcache
+
+# TypeScript
+*.tsbuildinfo
+
+# Env files
 .env
+.env.*
+!.env.example
+!.env.template
 
-# Editor/IDE
-# .idea/
-# .vscode/
+# =========================
+# Testing / tooling
+# =========================
+# Playwright / Cypress
+playwright-report/
+test-results/
+cypress/videos/
+cypress/screenshots/
+
+# =========================
+# Local secrets / credentials
+# =========================
+*.pem
+*.key
+*.p12
+*.keystore
+*.jks
+*.crt
+*.cer
