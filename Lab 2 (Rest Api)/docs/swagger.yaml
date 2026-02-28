@@ -1,0 +1,990 @@
+basePath: /api
+definitions:
+  handler.CommentCreate:
+    properties:
+      author:
+        type: string
+      taskId:
+        type: integer
+      text:
+        type: string
+    required:
+    - author
+    - taskId
+    - text
+    type: object
+  handler.CommentCreateUnderTask:
+    properties:
+      author:
+        type: string
+      text:
+        type: string
+    required:
+    - author
+    - text
+    type: object
+  handler.CommentUpdate:
+    properties:
+      author:
+        type: string
+      text:
+        type: string
+    type: object
+  handler.CommentsListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.Comment'
+        type: array
+      page:
+        type: integer
+      pageSize:
+        type: integer
+    type: object
+  handler.ProjectCreate:
+    properties:
+      description:
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/model.ProjectStatus'
+        enum:
+        - active
+        - archived
+      title:
+        type: string
+    required:
+    - status
+    - title
+    type: object
+  handler.ProjectTasksListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.Task'
+        type: array
+      page:
+        type: integer
+      pageSize:
+        type: integer
+    type: object
+  handler.ProjectUpdate:
+    properties:
+      description:
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/model.ProjectStatus'
+        enum:
+        - active
+        - archived
+      title:
+        type: string
+    type: object
+  handler.ProjectsListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.Project'
+        type: array
+      page:
+        type: integer
+      pageSize:
+        type: integer
+    type: object
+  handler.TaskCommentsListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.Comment'
+        type: array
+      page:
+        type: integer
+      pageSize:
+        type: integer
+    type: object
+  handler.TaskCreate:
+    properties:
+      assignee:
+        type: string
+      dueDate:
+        type: string
+      projectId:
+        type: integer
+      status:
+        allOf:
+        - $ref: '#/definitions/model.TaskStatus'
+        enum:
+        - todo
+        - in_progress
+        - done
+      title:
+        type: string
+    required:
+    - projectId
+    - status
+    - title
+    type: object
+  handler.TaskCreateUnderProject:
+    properties:
+      assignee:
+        type: string
+      dueDate:
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/model.TaskStatus'
+        enum:
+        - todo
+        - in_progress
+        - done
+      title:
+        type: string
+    required:
+    - status
+    - title
+    type: object
+  handler.TaskUpdate:
+    properties:
+      assignee:
+        type: string
+      dueDate:
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/model.TaskStatus'
+        enum:
+        - todo
+        - in_progress
+        - done
+      title:
+        type: string
+    type: object
+  handler.TasksListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.Task'
+        type: array
+      page:
+        type: integer
+      pageSize:
+        type: integer
+    type: object
+  httpx.APIError:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
+  model.Comment:
+    properties:
+      author:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: integer
+      taskId:
+        type: integer
+      text:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  model.Project:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      status:
+        $ref: '#/definitions/model.ProjectStatus'
+      tasks:
+        items:
+          $ref: '#/definitions/model.Task'
+        type: array
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  model.ProjectStatus:
+    enum:
+    - active
+    - archived
+    type: string
+    x-enum-varnames:
+    - ProjectActive
+    - ProjectArchived
+  model.Task:
+    properties:
+      assignee:
+        type: string
+      comments:
+        items:
+          $ref: '#/definitions/model.Comment'
+        type: array
+      createdAt:
+        type: string
+      dueDate:
+        type: string
+      id:
+        type: integer
+      projectId:
+        type: integer
+      status:
+        $ref: '#/definitions/model.TaskStatus'
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  model.TaskStatus:
+    enum:
+    - todo
+    - in_progress
+    - done
+    type: string
+    x-enum-varnames:
+    - TaskTodo
+    - TaskInProgress
+    - TaskDone
+info:
+  contact: {}
+  description: REST API for projects, tasks, and comments.
+  title: Project Management API
+  version: "1.0"
+paths:
+  /comments:
+    get:
+      consumes:
+      - application/json
+      description: List comments with pagination, sorting, and filtering.
+      parameters:
+      - description: Page number (1-based)
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Sort by field (prefix with - for desc)
+        in: query
+        name: sort
+        type: string
+      - description: Filter by task ID
+        in: query
+        name: taskId
+        type: integer
+      - description: Filter by author
+        in: query
+        name: author
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.CommentsListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: List comments
+      tags:
+      - Comments
+    post:
+      consumes:
+      - application/json
+      description: Create a new comment.
+      parameters:
+      - description: Comment payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CommentCreate'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Comment'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: Create comment
+      tags:
+      - Comments
+  /comments/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a comment by ID.
+      parameters:
+      - description: Comment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: Delete comment
+      tags:
+      - Comments
+    get:
+      consumes:
+      - application/json
+      description: Get a comment by ID.
+      parameters:
+      - description: Comment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Comment'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: Get comment
+      tags:
+      - Comments
+    put:
+      consumes:
+      - application/json
+      description: Partially update a comment by ID.
+      parameters:
+      - description: Comment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Comment fields to update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CommentUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Comment'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: Update comment
+      tags:
+      - Comments
+  /projects:
+    get:
+      consumes:
+      - application/json
+      description: List projects with pagination, sorting, filtering, and optional
+        include of tasks.
+      parameters:
+      - description: Page number (1-based)
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Sort by field (prefix with - for desc)
+        in: query
+        name: sort
+        type: string
+      - description: Filter by status
+        enum:
+        - active
+        - archived
+        in: query
+        name: status
+        type: string
+      - description: Search in title or description
+        in: query
+        name: q
+        type: string
+      - description: Include related entities
+        enum:
+        - tasks
+        in: query
+        name: include
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.ProjectsListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: List projects
+      tags:
+      - Projects
+    post:
+      consumes:
+      - application/json
+      description: Create a new project.
+      parameters:
+      - description: Project payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.ProjectCreate'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Project'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: Create project
+      tags:
+      - Projects
+  /projects/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a project by ID. Returns 204 even if it did not exist.
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: Delete project
+      tags:
+      - Projects
+    get:
+      consumes:
+      - application/json
+      description: Get a project by ID. Optionally include tasks.
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Include related entities
+        enum:
+        - tasks
+        in: query
+        name: include
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Project'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: Get project
+      tags:
+      - Projects
+    put:
+      consumes:
+      - application/json
+      description: Partially update a project by ID.
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Project fields to update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.ProjectUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Project'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: Update project
+      tags:
+      - Projects
+  /projects/{id}/tasks:
+    get:
+      consumes:
+      - application/json
+      description: List tasks under a specific project with pagination, sorting, and
+        filtering.
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Page number (1-based)
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Sort by field (prefix with - for desc)
+        in: query
+        name: sort
+        type: string
+      - description: Filter by status
+        enum:
+        - todo
+        - in_progress
+        - done
+        in: query
+        name: status
+        type: string
+      - description: Filter by assignee
+        in: query
+        name: assignee
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.ProjectTasksListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: List tasks in project
+      tags:
+      - Projects
+      - Tasks
+    post:
+      consumes:
+      - application/json
+      description: Create a new task under a specific project.
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Task payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.TaskCreateUnderProject'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: Create task in project
+      tags:
+      - Projects
+      - Tasks
+  /tasks:
+    get:
+      consumes:
+      - application/json
+      description: List tasks with pagination, sorting, filtering, and optional include
+        of comments.
+      parameters:
+      - description: Page number (1-based)
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Sort by field (prefix with - for desc)
+        in: query
+        name: sort
+        type: string
+      - description: Filter by project ID
+        in: query
+        name: projectId
+        type: integer
+      - description: Filter by status
+        enum:
+        - todo
+        - in_progress
+        - done
+        in: query
+        name: status
+        type: string
+      - description: Filter by assignee
+        in: query
+        name: assignee
+        type: string
+      - description: Filter by due date from (YYYY-MM-DD)
+        in: query
+        name: dueFrom
+        type: string
+      - description: Filter by due date to (YYYY-MM-DD)
+        in: query
+        name: dueTo
+        type: string
+      - description: Include related entities
+        enum:
+        - comments
+        in: query
+        name: include
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.TasksListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: List tasks
+      tags:
+      - Tasks
+    post:
+      consumes:
+      - application/json
+      description: Create a new task.
+      parameters:
+      - description: Task payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.TaskCreate'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: Create task
+      tags:
+      - Tasks
+  /tasks/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a task by ID.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: Delete task
+      tags:
+      - Tasks
+    get:
+      consumes:
+      - application/json
+      description: Get a task by ID. Optionally include comments.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Include related entities
+        enum:
+        - comments
+        in: query
+        name: include
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: Get task
+      tags:
+      - Tasks
+    put:
+      consumes:
+      - application/json
+      description: 'Partially update a task by ID. To clear dueDate, send {"dueDate":
+        null}.'
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Task fields to update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.TaskUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: Update task
+      tags:
+      - Tasks
+  /tasks/{id}/comments:
+    get:
+      consumes:
+      - application/json
+      description: List comments under a specific task with pagination, sorting, and
+        filtering.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Page number (1-based)
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Sort by field (prefix with - for desc)
+        in: query
+        name: sort
+        type: string
+      - description: Filter by author
+        in: query
+        name: author
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.TaskCommentsListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: List comments for task
+      tags:
+      - Tasks
+      - Comments
+    post:
+      consumes:
+      - application/json
+      description: Create a new comment under a specific task.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Comment payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CommentCreateUnderTask'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Comment'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: Create comment for task
+      tags:
+      - Tasks
+      - Comments
+swagger: "2.0"
