@@ -1,0 +1,42 @@
+<section class="w-full max-w-3xl space-y-6 rounded-3xl bg-white/80 p-8 shadow-2xl shadow-slate-900/10 backdrop-blur" *ngIf="isBrowser">
+  <header class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-semibold tracking-tight">Profile</h1>
+      <p class="text-sm text-slate-600">Your account details.</p>
+    </div>
+    <button
+      type="button"
+      (click)="logout()"
+      class="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-900/30"
+    >
+      Logout
+    </button>
+  </header>
+
+  <ng-container *ngIf="loading$ | async; else profileLoaded">
+    <p class="text-sm text-slate-600">Loading profile...</p>
+  </ng-container>
+
+  <ng-template #profileLoaded>
+    <p class="text-sm font-medium text-rose-600" *ngIf="error$ | async as error">{{ error }}</p>
+
+    <ng-container *ngIf="user$ | async as user">
+      <div class="grid gap-4">
+        <div class="rounded-2xl bg-slate-900/5 p-4">
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Name</p>
+          <p class="mt-2 text-base font-semibold text-slate-900">{{ user.name }}</p>
+        </div>
+        <div class="rounded-2xl bg-slate-900/5 p-4">
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Email</p>
+          <p class="mt-2 text-base font-semibold text-slate-900">{{ user.email }}</p>
+        </div>
+        <div class="rounded-2xl bg-slate-900/5 p-4">
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Joined</p>
+          <p class="mt-2 text-base font-semibold text-slate-900">
+            {{ user.createdAt | date: 'mediumDate' }}
+          </p>
+        </div>
+      </div>
+    </ng-container>
+  </ng-template>
+</section>

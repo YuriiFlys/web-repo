@@ -73,6 +73,14 @@ func ApplySorting(db *gorm.DB, allowed map[string]string, p ListParams, defaultO
 	return db
 }
 
+func IsLast(total int64, p ListParams) bool {
+	if total == 0 {
+		return true
+	}
+	end := int64(p.Page * p.PageSize)
+	return end >= total
+}
+
 func splitComma(s string) []string {
 	if strings.TrimSpace(s) == "" {
 		return nil

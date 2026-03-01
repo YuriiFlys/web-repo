@@ -1,5 +1,23 @@
 basePath: /api
 definitions:
+  handler.AuthResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/handler.AuthUser'
+    type: object
+  handler.AuthUser:
+    properties:
+      createdAt:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
   handler.CommentCreate:
     properties:
       author:
@@ -32,6 +50,8 @@ definitions:
     type: object
   handler.CommentsListResponse:
     properties:
+      isLast:
+        type: boolean
       items:
         items:
           $ref: '#/definitions/model.Comment'
@@ -40,6 +60,16 @@ definitions:
         type: integer
       pageSize:
         type: integer
+    type: object
+  handler.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
     type: object
   handler.ProjectCreate:
     properties:
@@ -59,6 +89,8 @@ definitions:
     type: object
   handler.ProjectTasksListResponse:
     properties:
+      isLast:
+        type: boolean
       items:
         items:
           $ref: '#/definitions/model.Task'
@@ -83,6 +115,8 @@ definitions:
     type: object
   handler.ProjectsListResponse:
     properties:
+      isLast:
+        type: boolean
       items:
         items:
           $ref: '#/definitions/model.Project'
@@ -92,8 +126,24 @@ definitions:
       pageSize:
         type: integer
     type: object
+  handler.RegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
   handler.TaskCommentsListResponse:
     properties:
+      isLast:
+        type: boolean
       items:
         items:
           $ref: '#/definitions/model.Comment'
@@ -105,7 +155,9 @@ definitions:
     type: object
   handler.TaskCreate:
     properties:
-      assignee:
+      assigneeId:
+        type: integer
+      description:
         type: string
       dueDate:
         type: string
@@ -127,7 +179,9 @@ definitions:
     type: object
   handler.TaskCreateUnderProject:
     properties:
-      assignee:
+      assigneeId:
+        type: integer
+      description:
         type: string
       dueDate:
         type: string
@@ -146,7 +200,9 @@ definitions:
     type: object
   handler.TaskUpdate:
     properties:
-      assignee:
+      assigneeId:
+        type: integer
+      description:
         type: string
       dueDate:
         type: string
@@ -162,6 +218,8 @@ definitions:
     type: object
   handler.TasksListResponse:
     properties:
+      isLast:
+        type: boolean
       items:
         items:
           $ref: '#/definitions/model.Task'
@@ -170,6 +228,22 @@ definitions:
         type: integer
       pageSize:
         type: integer
+    type: object
+  handler.UserSummary:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  handler.UsersListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/handler.UserSummary'
+        type: array
     type: object
   httpx.APIError:
     properties:
@@ -222,13 +296,15 @@ definitions:
     - ProjectArchived
   model.Task:
     properties:
-      assignee:
-        type: string
+      assigneeId:
+        type: integer
       comments:
         items:
           $ref: '#/definitions/model.Comment'
         type: array
       createdAt:
+        type: string
+      description:
         type: string
       dueDate:
         type: string
@@ -259,6 +335,91 @@ info:
   title: Project Management API
   version: "1.0"
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return JWT token.
+      parameters:
+      - description: Login payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: Login
+      tags:
+      - Auth
+  /auth/me:
+    get:
+      description: Return the current authenticated user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.AuthUser'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: Current user
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a user account and return JWT token.
+      parameters:
+      - description: Register payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: Register new user
+      tags:
+      - Auth
   /comments:
     get:
       consumes:
@@ -647,10 +808,10 @@ paths:
         in: query
         name: status
         type: string
-      - description: Filter by assignee
+      - description: Filter by assignee ID
         in: query
-        name: assignee
-        type: string
+        name: assigneeId
+        type: integer
       produces:
       - application/json
       responses:
@@ -736,10 +897,10 @@ paths:
         in: query
         name: status
         type: string
-      - description: Filter by assignee
+      - description: Filter by assignee ID
         in: query
-        name: assignee
-        type: string
+        name: assigneeId
+        type: integer
       - description: Filter by due date from (YYYY-MM-DD)
         in: query
         name: dueFrom
@@ -987,4 +1148,21 @@ paths:
       tags:
       - Tasks
       - Comments
+  /users:
+    get:
+      description: List users for assignment.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UsersListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.APIError'
+      summary: List users
+      tags:
+      - Users
 swagger: "2.0"

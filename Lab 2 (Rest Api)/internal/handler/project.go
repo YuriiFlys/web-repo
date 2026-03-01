@@ -73,6 +73,12 @@ func (h *ProjectHandler) List(c *gin.Context) {
 	if status != "" {
 		db = db.Where("status = ?", status)
 	}
+	var total int64
+	if err := db.Count(&total).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, httpx.Err("INTERNAL", err.Error()))
+		return
+	}
+
 	if include == "tasks" {
 		db = db.Preload("Tasks")
 	}
@@ -96,6 +102,7 @@ func (h *ProjectHandler) List(c *gin.Context) {
 		"page":     lp.Page,
 		"pageSize": lp.PageSize,
 		"items":    items,
+		"isLast":   httpx.IsLast(total, lp),
 	})
 }
 
@@ -235,10 +242,11 @@ func (h *ProjectHandler) Delete(c *gin.Context) {
 // -------- Nested tasks under project --------
 
 type TaskCreateUnderProject struct {
-	Title    string           `json:"title" binding:"required"`
-	Status   model.TaskStatus `json:"status" binding:"required,oneof=todo in_progress done"`
-	Assignee string           `json:"assignee"`
-	DueDate  *time.Time       `json:"dueDate"`
+	Title       string           `json:"title" binding:"required"`
+	Description string           `json:"description"`
+	Status      model.TaskStatus `json:"status" binding:"required,oneof=todo in_progress done"`
+	AssigneeID  *uint            `json:"assigneeId"`
+	DueDate     *time.Time       `json:"dueDate"`
 }
 
 // ListProjectTasks godoc
@@ -252,7 +260,7 @@ type TaskCreateUnderProject struct {
 // @Param pageSize query int false "Page size"
 // @Param sort query string false "Sort by field (prefix with - for desc)"
 // @Param status query string false "Filter by status" Enums(todo,in_progress,done)
-// @Param assignee query string false "Filter by assignee"
+// @Param assigneeId query int false "Filter by assignee ID"
 // @Success 200 {object} ProjectTasksListResponse
 // @Failure 400 {object} httpx.APIError
 // @Failure 500 {object} httpx.APIError
@@ -266,15 +274,21 @@ func (h *ProjectHandler) ListProjectTasks(c *gin.Context) {
 
 	lp := httpx.ParseListParams(c.Query("page"), c.Query("pageSize"), c.Query("sort"))
 	status := strings.TrimSpace(c.Query("status"))
-	assignee := strings.TrimSpace(c.Query("assignee"))
+	assigneeID := strings.TrimSpace(c.Query("assigneeId"))
 
 	db := h.db.Model(&model.Task{}).Where("project_id = ?", projectID)
 
 	if status != "" {
 		db = db.Where("status = ?", status)
 	}
-	if assignee != "" {
-		db = db.Where("assignee = ?", assignee)
+	if assigneeID != "" {
+		db = db.Where("assignee_id = ?", assigneeID)
+	}
+
+	var total int64
+	if err := db.Count(&total).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, httpx.Err("INTERNAL", err.Error()))
+		return
 	}
 
 	allowedSort := map[string]string{
@@ -297,6 +311,7 @@ func (h *ProjectHandler) ListProjectTasks(c *gin.Context) {
 		"page":     lp.Page,
 		"pageSize": lp.PageSize,
 		"items":    items,
+		"isLast":   httpx.IsLast(total, lp),
 	})
 }
 
@@ -326,11 +341,12 @@ func (h *ProjectHandler) CreateProjectTask(c *gin.Context) {
 	}
 
 	t := model.Task{
-		ProjectID: uint(projectID),
-		Title:     body.Title,
-		Status:    body.Status,
-		Assignee:  body.Assignee,
-		DueDate:   body.DueDate,
+		ProjectID:   uint(projectID),
+		Title:       body.Title,
+		Description: body.Description,
+		Status:      body.Status,
+		AssigneeID:  body.AssigneeID,
+		DueDate:     body.DueDate,
 	}
 
 	if err := h.db.Create(&t).Error; err != nil {

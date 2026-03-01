@@ -64,6 +64,12 @@ func (h *CommentHandler) List(c *gin.Context) {
 		db = db.Where("author = ?", author)
 	}
 
+	var total int64
+	if err := db.Count(&total).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, httpx.Err("INTERNAL", err.Error()))
+		return
+	}
+
 	allowedSort := map[string]string{
 		"id":        "id",
 		"createdAt": "created_at",
@@ -81,6 +87,7 @@ func (h *CommentHandler) List(c *gin.Context) {
 		"page":     lp.Page,
 		"pageSize": lp.PageSize,
 		"items":    items,
+		"isLast":   httpx.IsLast(total, lp),
 	})
 }
 
