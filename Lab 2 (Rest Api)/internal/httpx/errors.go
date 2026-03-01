@@ -12,14 +12,17 @@ func Err(code, msg string) APIError {
 }
 
 const (
-	CodeBadRequest = "BAD_REQUEST"
-	CodeNotFound   = "NOT_FOUND"
+	CodeBadRequest   = "BAD_REQUEST"
+	CodeNotFound     = "NOT_FOUND"
+	CodeUnauthorized = "UNAUTHORIZED"
 )
 
 func StatusFor(code string) int {
 	switch code {
 	case CodeNotFound:
 		return http.StatusNotFound
+	case CodeUnauthorized:
+		return http.StatusUnauthorized
 	default:
 		return http.StatusBadRequest
 	}

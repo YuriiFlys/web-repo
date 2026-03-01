@@ -15,6 +15,136 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/login": {
+            "post": {
+                "description": "Authenticate user and return JWT token.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login",
+                "parameters": [
+                    {
+                        "description": "Login payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "description": "Return the current authenticated user.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Current user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.AuthUser"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "description": "Create a user account and return JWT token.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Register new user",
+                "parameters": [
+                    {
+                        "description": "Register payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/handler.AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/comments": {
             "get": {
                 "description": "List comments with pagination, sorting, and filtering.",
@@ -603,9 +733,9 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "Filter by assignee",
-                        "name": "assignee",
+                        "type": "integer",
+                        "description": "Filter by assignee ID",
+                        "name": "assigneeId",
                         "in": "query"
                     }
                 ],
@@ -733,9 +863,9 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "Filter by assignee",
-                        "name": "assignee",
+                        "type": "integer",
+                        "description": "Filter by assignee ID",
+                        "name": "assigneeId",
                         "in": "query"
                     },
                     {
@@ -1101,9 +1231,63 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/users": {
+            "get": {
+                "description": "List users for assignment.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "List users",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.UsersListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.APIError"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "handler.AuthResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/handler.AuthUser"
+                }
+            }
+        },
+        "handler.AuthUser": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "handler.CommentCreate": {
             "type": "object",
             "required": [
@@ -1152,6 +1336,9 @@ const docTemplate = `{
         "handler.CommentsListResponse": {
             "type": "object",
             "properties": {
+                "isLast": {
+                    "type": "boolean"
+                },
                 "items": {
                     "type": "array",
                     "items": {
@@ -1163,6 +1350,21 @@ const docTemplate = `{
                 },
                 "pageSize": {
                     "type": "integer"
+                }
+            }
+        },
+        "handler.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
                 }
             }
         },
@@ -1195,6 +1397,9 @@ const docTemplate = `{
         "handler.ProjectTasksListResponse": {
             "type": "object",
             "properties": {
+                "isLast": {
+                    "type": "boolean"
+                },
                 "items": {
                     "type": "array",
                     "items": {
@@ -1234,6 +1439,9 @@ const docTemplate = `{
         "handler.ProjectsListResponse": {
             "type": "object",
             "properties": {
+                "isLast": {
+                    "type": "boolean"
+                },
                 "items": {
                     "type": "array",
                     "items": {
@@ -1248,9 +1456,32 @@ const docTemplate = `{
                 }
             }
         },
+        "handler.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "name",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 6
+                }
+            }
+        },
         "handler.TaskCommentsListResponse": {
             "type": "object",
             "properties": {
+                "isLast": {
+                    "type": "boolean"
+                },
                 "items": {
                     "type": "array",
                     "items": {
@@ -1273,7 +1504,10 @@ const docTemplate = `{
                 "title"
             ],
             "properties": {
-                "assignee": {
+                "assigneeId": {
+                    "type": "integer"
+                },
+                "description": {
                     "type": "string"
                 },
                 "dueDate": {
@@ -1306,7 +1540,10 @@ const docTemplate = `{
                 "title"
             ],
             "properties": {
-                "assignee": {
+                "assigneeId": {
+                    "type": "integer"
+                },
+                "description": {
                     "type": "string"
                 },
                 "dueDate": {
@@ -1332,7 +1569,10 @@ const docTemplate = `{
         "handler.TaskUpdate": {
             "type": "object",
             "properties": {
-                "assignee": {
+                "assigneeId": {
+                    "type": "integer"
+                },
+                "description": {
                     "type": "string"
                 },
                 "dueDate": {
@@ -1358,6 +1598,9 @@ const docTemplate = `{
         "handler.TasksListResponse": {
             "type": "object",
             "properties": {
+                "isLast": {
+                    "type": "boolean"
+                },
                 "items": {
                     "type": "array",
                     "items": {
@@ -1369,6 +1612,31 @@ const docTemplate = `{
                 },
                 "pageSize": {
                     "type": "integer"
+                }
+            }
+        },
+        "handler.UserSummary": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.UsersListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handler.UserSummary"
+                    }
                 }
             }
         },
@@ -1449,8 +1717,8 @@ const docTemplate = `{
         "model.Task": {
             "type": "object",
             "properties": {
-                "assignee": {
-                    "type": "string"
+                "assigneeId": {
+                    "type": "integer"
                 },
                 "comments": {
                     "type": "array",
@@ -1459,6 +1727,9 @@ const docTemplate = `{
                     }
                 },
                 "createdAt": {
+                    "type": "string"
+                },
+                "description": {
                     "type": "string"
                 },
                 "dueDate": {

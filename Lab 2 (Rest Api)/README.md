@@ -20,10 +20,13 @@ Includes **pagination**, **sorting**, **filtering**, nested routes, and **Swagge
   - [2) Configure .env](#2-configure-env)
   - [3) Run API](#3-run-api)
 - [Swagger](#swagger)
+- [Authentication](#authentication)
 - [API Overview](#api-overview)
+  - [Auth](#auth)
   - [Projects](#projects)
   - [Tasks](#tasks)
   - [Comments](#comments)
+  - [Users](#users)
 - [Query Parameters](#query-parameters)
   - [Pagination](#pagination)
   - [Sorting](#sorting)
@@ -37,23 +40,23 @@ Includes **pagination**, **sorting**, **filtering**, nested routes, and **Swagge
 
 ## Features
 
-- ✅ CRUD for **Projects**, **Tasks**, **Comments**
-- ✅ Relations:
+- CRUD for **Projects**, **Tasks**, **Comments**
+- Relations:
   - Project **has many** Tasks
   - Task **has many** Comments
-- ✅ Nested endpoints:
-  - `/projects/{projectId}/tasks`
-  - `/tasks/{taskId}/comments`
-- ✅ Pagination on all list endpoints (`page`, `pageSize`)
-- ✅ Sorting on list endpoints (`sort`)
-- ✅ Filtering:
-  - Projects: `status`, `q`
-  - Tasks: `projectId`, `status`, `assignee`, `dueFrom`, `dueTo`
-  - Comments: `taskId`, `author`
-- ✅ Swagger docs + Swagger UI
+- Nested endpoints:
+  - /projects/{projectId}/tasks
+  - /tasks/{taskId}/comments
+- Pagination on all list endpoints (page, pageSize)
+- Sorting on list endpoints (sort)
+- Filtering:
+  - Projects: status, q
+  - Tasks: projectId, status, ssigneeId, dueFrom, dueTo
+  - Comments: 	askId, uthor
+- Swagger docs + Swagger UI
+- JWT auth with protected routes
 
 ---
-
 ## Tech Stack
 
 - **Go**
@@ -71,7 +74,7 @@ Project (1) ──── (N) Task (1) ──── (N) Comment
 ````
 
 * **Project**: title, description, status (`active|archived`)
-* **Task**: projectId, title, status (`todo|in_progress|done`), assignee, dueDate
+* **Task**: projectId, title, status (`todo|in_progress|done`), assigneeId, dueDate
 * **Comment**: taskId, author, text
 
 ---
@@ -145,9 +148,32 @@ Generated output:
 
 ---
 
+## Authentication
+
+All API endpoints under `/api` are protected by JWT **except**:
+
+- `POST /auth/register`
+- `POST /auth/login`
+
+Use the token from login/register responses and send it as a bearer token:
+
+```
+Authorization: Bearer <token>
+```
+
+You can validate a token with `GET /auth/me`.
+
+---
+
 ## API Overview
 
 Base path: `/api`
+
+### Auth
+
+* `POST /auth/register`
+* `POST /auth/login`
+* `GET  /auth/me` (protected)
 
 ### Projects
 
@@ -159,13 +185,13 @@ Base path: `/api`
 * `PUT    /projects/{id}`
 * `DELETE /projects/{id}`
 * `GET    /projects/{projectId}/tasks`
-  Query: `page, pageSize, sort, status, assignee`
+  Query: `page, pageSize, sort, status, assigneeId`
 * `POST   /projects/{projectId}/tasks`
 
 ### Tasks
 
 * `GET    /tasks`
-  Query: `page, pageSize, sort, projectId, status, assignee, dueFrom, dueTo, include=comments`
+  Query: `page, pageSize, sort, projectId, status, assigneeId, dueFrom, dueTo, include=comments`
 * `POST   /tasks`
 * `GET    /tasks/{id}`
   Query: `include=comments`
@@ -184,6 +210,10 @@ Base path: `/api`
 * `GET    /comments/{id}`
 * `PUT    /comments/{id}`
 * `DELETE /comments/{id}`
+
+### Users
+
+* `GET /users` (protected)
 
 ---
 
@@ -226,7 +256,7 @@ curl "http://localhost:8080/api/tasks?sort=title,-createdAt"
 
 * `projectId=<id>`
 * `status=todo|in_progress|done`
-* `assignee=<name>`
+* `assigneeId=<userId>`
 * `dueFrom=YYYY-MM-DD`
 * `dueTo=YYYY-MM-DD`
 
@@ -252,18 +282,36 @@ curl "http://localhost:8080/api/projects/1?include=tasks"
 
 ## Examples (cURL)
 
-### Create a Project
+### Register
+
+```bash
+curl -i -X POST "http://localhost:8080/api/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Demo User","email":"demo@example.com","password":"secret123"}'
+```
+
+### Login
+
+```bash
+curl -i -X POST "http://localhost:8080/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"demo@example.com","password":"secret123"}'
+```
+
+### Create a Project (authenticated)
 
 ```bash
 curl -i -X POST "http://localhost:8080/api/projects" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
   -d '{"title":"Demo Project","description":"for testing","status":"active"}'
 ```
 
 ### List Projects (filter + search + sort + paging)
 
 ```bash
-curl -i "http://localhost:8080/api/projects?status=active&q=demo&sort=-createdAt&page=1&pageSize=5"
+curl -i "http://localhost:8080/api/projects?status=active&q=demo&sort=-createdAt&page=1&pageSize=5" \
+  -H "Authorization: Bearer <token>"
 ```
 
 ### Create a Task under Project (nested)
@@ -271,13 +319,15 @@ curl -i "http://localhost:8080/api/projects?status=active&q=demo&sort=-createdAt
 ```bash
 curl -i -X POST "http://localhost:8080/api/projects/1/tasks" \
   -H "Content-Type: application/json" \
-  -d '{"title":"Setup auth","status":"todo","assignee":"Yura"}'
+  -H "Authorization: Bearer <token>" \
+  -d '{"title":"Setup auth","status":"todo","assigneeId":1}'
 ```
 
 ### List Tasks (filters)
 
 ```bash
-curl -i "http://localhost:8080/api/tasks?projectId=1&status=todo&assignee=Yura&sort=-createdAt"
+curl -i "http://localhost:8080/api/tasks?projectId=1&status=todo&assigneeId=1&sort=-createdAt" \
+  -H "Authorization: Bearer <token>"
 ```
 
 ### Create Comment under Task
@@ -285,6 +335,7 @@ curl -i "http://localhost:8080/api/tasks?projectId=1&status=todo&assignee=Yura&s
 ```bash
 curl -i -X POST "http://localhost:8080/api/tasks/1/comments" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
   -d '{"author":"Mentor","text":"Looks good"}'
 ```
 
@@ -293,6 +344,7 @@ curl -i -X POST "http://localhost:8080/api/tasks/1/comments" \
 ```bash
 curl -i -X PUT "http://localhost:8080/api/tasks/1" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
   -d '{"dueDate": null}'
 ```
 

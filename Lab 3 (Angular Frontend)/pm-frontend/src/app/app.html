@@ -1,0 +1,54 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-amber-50 text-slate-900">
+  <header class="sticky top-0 z-10 border-b border-slate-900/10 bg-white/70 backdrop-blur">
+    <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
+      <a
+        routerLink="/projects"
+        class="text-lg font-semibold tracking-tight transition hover:text-slate-700"
+      >
+        Project Management
+      </a>
+      <nav class="flex items-center gap-3 text-sm font-medium" *ngIf="auth.ready$ | async">
+        <ng-container *ngIf="auth.authState$ | async as authed">
+          <a
+            *ngIf="authed"
+            routerLink="/projects"
+            routerLinkActive="bg-slate-900 text-white"
+            class="rounded-full px-3 py-1 transition hover:bg-slate-900 hover:text-white"
+          >
+            Projects
+          </a>
+          <a
+            *ngIf="authed"
+            routerLink="/profile"
+            routerLinkActive="bg-slate-900 text-white"
+            class="rounded-full px-3 py-1 transition hover:bg-slate-900 hover:text-white"
+          >
+            Profile
+          </a>
+          <a
+            *ngIf="!authed"
+            routerLink="/login"
+            routerLinkActive="bg-slate-900 text-white"
+            class="rounded-full px-3 py-1 transition hover:bg-slate-900 hover:text-white"
+          >
+            Login
+          </a>
+          <a
+            *ngIf="!authed"
+            routerLink="/register"
+            routerLinkActive="bg-slate-900 text-white"
+            class="rounded-full px-3 py-1 transition hover:bg-slate-900 hover:text-white"
+          >
+            Register
+          </a>
+        </ng-container>
+      </nav>
+    </div>
+  </header>
+
+  <main class="mx-auto flex w-full max-w-6xl flex-1 justify-center px-6 py-10">
+    <router-outlet />
+  </main>
+</div>
+
+<app-toasts />

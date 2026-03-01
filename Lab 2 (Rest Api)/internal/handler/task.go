@@ -18,18 +18,20 @@ type TaskHandler struct{ db *gorm.DB }
 func NewTaskHandler(db *gorm.DB) *TaskHandler { return &TaskHandler{db: db} }
 
 type TaskCreate struct {
-	ProjectID uint             `json:"projectId" binding:"required"`
-	Title     string           `json:"title" binding:"required"`
-	Status    model.TaskStatus `json:"status" binding:"required,oneof=todo in_progress done"`
-	Assignee  string           `json:"assignee"`
-	DueDate   *time.Time       `json:"dueDate"`
+	ProjectID   uint             `json:"projectId" binding:"required"`
+	Title       string           `json:"title" binding:"required"`
+	Description string           `json:"description"`
+	Status      model.TaskStatus `json:"status" binding:"required,oneof=todo in_progress done"`
+	AssigneeID  *uint            `json:"assigneeId"`
+	DueDate     *time.Time       `json:"dueDate"`
 }
 
 type TaskUpdate struct {
-	Title    *string           `json:"title"`
-	Status   *model.TaskStatus `json:"status" binding:"omitempty,oneof=todo in_progress done"`
-	Assignee *string           `json:"assignee"`
-	DueDate  **time.Time       `json:"dueDate"`
+	Title       *string           `json:"title"`
+	Description *string           `json:"description"`
+	Status      *model.TaskStatus `json:"status" binding:"omitempty,oneof=todo in_progress done"`
+	AssigneeID  **uint            `json:"assigneeId"`
+	DueDate     **time.Time       `json:"dueDate"`
 }
 
 func (h *TaskHandler) Register(r *gin.RouterGroup) {
@@ -55,7 +57,7 @@ func (h *TaskHandler) Register(r *gin.RouterGroup) {
 // @Param sort query string false "Sort by field (prefix with - for desc)"
 // @Param projectId query int false "Filter by project ID"
 // @Param status query string false "Filter by status" Enums(todo,in_progress,done)
-// @Param assignee query string false "Filter by assignee"
+// @Param assigneeId query int false "Filter by assignee ID"
 // @Param dueFrom query string false "Filter by due date from (YYYY-MM-DD)"
 // @Param dueTo query string false "Filter by due date to (YYYY-MM-DD)"
 // @Param include query string false "Include related entities" Enums(comments)
@@ -68,7 +70,7 @@ func (h *TaskHandler) List(c *gin.Context) {
 
 	projectId := strings.TrimSpace(c.Query("projectId"))
 	status := strings.TrimSpace(c.Query("status"))
-	assignee := strings.TrimSpace(c.Query("assignee"))
+	assigneeID := strings.TrimSpace(c.Query("assigneeId"))
 	dueFrom := strings.TrimSpace(c.Query("dueFrom"))
 	dueTo := strings.TrimSpace(c.Query("dueTo"))
 	include := strings.TrimSpace(c.Query("include")) // "comments"
@@ -81,8 +83,8 @@ func (h *TaskHandler) List(c *gin.Context) {
 	if status != "" {
 		db = db.Where("status = ?", status)
 	}
-	if assignee != "" {
-		db = db.Where("assignee = ?", assignee)
+	if assigneeID != "" {
+		db = db.Where("assignee_id = ?", assigneeID)
 	}
 	if dueFrom != "" {
 		if t, err := time.Parse("2006-01-02", dueFrom); err == nil {
@@ -93,6 +95,12 @@ func (h *TaskHandler) List(c *gin.Context) {
 		if t, err := time.Parse("2006-01-02", dueTo); err == nil {
 			db = db.Where("due_date <= ?", t)
 		}
+	}
+
+	var total int64
+	if err := db.Count(&total).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, httpx.Err("INTERNAL", err.Error()))
+		return
 	}
 
 	if include == "comments" {
@@ -119,6 +127,7 @@ func (h *TaskHandler) List(c *gin.Context) {
 		"page":     lp.Page,
 		"pageSize": lp.PageSize,
 		"items":    items,
+		"isLast":   httpx.IsLast(total, lp),
 	})
 }
 
@@ -141,11 +150,12 @@ func (h *TaskHandler) Create(c *gin.Context) {
 	}
 
 	t := model.Task{
-		ProjectID: body.ProjectID,
-		Title:     body.Title,
-		Status:    body.Status,
-		Assignee:  body.Assignee,
-		DueDate:   body.DueDate,
+		ProjectID:   body.ProjectID,
+		Title:       body.Title,
+		Description: body.Description,
+		Status:      body.Status,
+		AssigneeID:  body.AssigneeID,
+		DueDate:     body.DueDate,
 	}
 
 	if err := h.db.Create(&t).Error; err != nil {
@@ -222,11 +232,14 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	if body.Title != nil {
 		t.Title = *body.Title
 	}
+	if body.Description != nil {
+		t.Description = *body.Description
+	}
 	if body.Status != nil {
 		t.Status = *body.Status
 	}
-	if body.Assignee != nil {
-		t.Assignee = *body.Assignee
+	if body.AssigneeID != nil {
+		t.AssigneeID = *body.AssigneeID
 	}
 	if body.DueDate != nil {
 		t.DueDate = *body.DueDate // if *DueDate == nil => set NULL
@@ -292,6 +305,12 @@ func (h *TaskHandler) ListTaskComments(c *gin.Context) {
 		db = db.Where("author = ?", author)
 	}
 
+	var total int64
+	if err := db.Count(&total).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, httpx.Err("INTERNAL", err.Error()))
+		return
+	}
+
 	allowedSort := map[string]string{
 		"id":        "id",
 		"createdAt": "created_at",
@@ -310,6 +329,7 @@ func (h *TaskHandler) ListTaskComments(c *gin.Context) {
 		"page":     lp.Page,
 		"pageSize": lp.PageSize,
 		"items":    items,
+		"isLast":   httpx.IsLast(total, lp),
 	})
 }
 

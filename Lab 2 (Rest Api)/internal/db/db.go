@@ -47,7 +47,7 @@ func MustOpen() *gorm.DB {
 	sqlDB.SetConnMaxLifetime(30 * time.Minute)
 	sqlDB.SetConnMaxIdleTime(5 * time.Minute)
 
-	if err := database.AutoMigrate(&model.Project{}, &model.Task{}, &model.Comment{}); err != nil {
+	if err := database.AutoMigrate(&model.User{}, &model.Project{}, &model.Task{}, &model.Comment{}); err != nil {
 		log.Fatalf("db migrate failed: %v", err)
 	}
 

@@ -29,14 +29,15 @@ type Project struct {
 }
 
 type Task struct {
-	ID        uint       `json:"id" gorm:"primaryKey"`
-	ProjectID uint       `json:"projectId" gorm:"not null;index"`
-	Title     string     `json:"title" gorm:"not null;index"`
-	Status    TaskStatus `json:"status" gorm:"not null;index"`
-	Assignee  string     `json:"assignee" gorm:"index"`
-	DueDate   *time.Time `json:"dueDate,omitempty" gorm:"index"`
-	CreatedAt time.Time  `json:"createdAt" gorm:"index"`
-	UpdatedAt time.Time  `json:"updatedAt"`
+	ID          uint       `json:"id" gorm:"primaryKey"`
+	ProjectID   uint       `json:"projectId" gorm:"not null;index"`
+	Title       string     `json:"title" gorm:"not null;index"`
+	Description string     `json:"description"`
+	Status      TaskStatus `json:"status" gorm:"not null;index"`
+	AssigneeID  *uint      `json:"assigneeId,omitempty" gorm:"index"`
+	DueDate     *time.Time `json:"dueDate,omitempty" gorm:"index"`
+	CreatedAt   time.Time  `json:"createdAt" gorm:"index"`
+	UpdatedAt   time.Time  `json:"updatedAt"`
 
 	Comments []Comment `json:"comments,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 }
@@ -48,4 +49,13 @@ type Comment struct {
 	Text      string    `json:"text" gorm:"not null"`
 	CreatedAt time.Time `json:"createdAt" gorm:"index"`
 	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+type User struct {
+	ID           uint      `json:"id" gorm:"primaryKey"`
+	Email        string    `json:"email" gorm:"not null;uniqueIndex"`
+	Name         string    `json:"name" gorm:"not null"`
+	PasswordHash string    `json:"-" gorm:"not null"`
+	CreatedAt    time.Time `json:"createdAt" gorm:"index"`
+	UpdatedAt    time.Time `json:"updatedAt"`
 }
