@@ -2,6 +2,7 @@ import { Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -9,7 +10,7 @@ import { BehaviorSubject, Observable, tap } from 'rxjs';
 export class Auth {
   private readonly tokenKey = 'pm_token';
   private readonly userKey = 'pm_user';
-  private readonly apiBase = 'http://localhost:8080/api';
+  private readonly apiBase = environment.apiUrl;
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly authStateSubject = new BehaviorSubject<boolean>(false);

@@ -9,6 +9,7 @@ import { Comment, CommentsListResponse, Project, Task, TaskStatus, TasksListResp
 import { FormsModule } from '@angular/forms';
 import { Auth } from '../../core/auth/auth';
 import { Toasts } from '../../core/toast/toast';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-project-details',
@@ -19,7 +20,7 @@ export class ProjectDetails {
   readonly projectId: string | null;
   readonly projectIdNum: number | null;
   readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-  private readonly apiBase = 'http://localhost:8080/api';
+  private readonly apiBase = environment.apiUrl;
   private readonly tasksSubject = new BehaviorSubject<Task[]>([]);
   private readonly commentsSubject = new BehaviorSubject<Comment[]>([]);
   private readonly usersSubject = new BehaviorSubject<User[]>([]);

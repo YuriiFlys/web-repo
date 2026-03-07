@@ -8,6 +8,7 @@ import { ProjectsListResponse, Project } from '../../core/models';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { catchError, map, shareReplay, startWith, switchMap } from 'rxjs/operators';
 import { Toasts } from '../../core/toast/toast';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-projects',
@@ -19,7 +20,7 @@ export class Projects {
   readonly loading$: Observable<boolean>;
   readonly error$: Observable<string>;
   readonly isLast$: Observable<boolean>;
-  private readonly apiBase = 'http://localhost:8080/api';
+  private readonly apiBase = environment.apiUrl;
   readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly errorSubject = new BehaviorSubject<string>('');
   private readonly filtersSubject = new BehaviorSubject<ProjectFilters>({

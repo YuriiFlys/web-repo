@@ -1,0 +1,16 @@
+{
+  "hosting": {
+    "public": "Lab 3 (Angular Frontend)/pm-frontend/dist/pm-frontend/browser",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

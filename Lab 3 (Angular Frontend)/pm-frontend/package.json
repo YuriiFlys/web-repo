@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "postbuild": "copy dist\\pm-frontend\\browser\\index.csr.html dist\\pm-frontend\\browser\\index.html",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:pm-frontend": "node dist/pm-frontend/server/server.mjs"
