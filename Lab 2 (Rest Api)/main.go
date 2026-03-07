@@ -50,12 +50,14 @@ func main() {
 	handler.NewTaskHandler(service.NewTaskService(repository.NewTaskRepository(database))).Register(protected)
 	handler.NewCommentHandler(service.NewCommentService(repository.NewCommentRepository(database))).Register(protected)
 
-	port := os.Getenv("APP_PORT")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = os.Getenv("APP_PORT")
+	}
 	if port == "" {
 		port = "8080"
 	}
-
-	log.Println("Server running at http://localhost:" + port)
+	log.Println("Server running on :" + port)
 	if err := r.Run(":" + port); err != nil {
 		log.Fatal(err)
 	}
