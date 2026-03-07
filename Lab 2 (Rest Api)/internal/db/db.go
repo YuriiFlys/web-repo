@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"time"
 
+	"project-management/internal/config"
 	"project-management/internal/model"
 
 	"gorm.io/driver/postgres"
@@ -14,54 +14,97 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func MustOpen() *gorm.DB {
+type Config struct {
+	Host         string
+	Port         string
+	DBName       string
+	User         string
+	Password     string
+	SSLMode      string
+	MaxOpenConns int
+	MaxIdleConns int
+}
 
-	host := os.Getenv("DB_HOST")
-	port := os.Getenv("DB_PORT")
-	name := os.Getenv("DB_NAME")
-	user := os.Getenv("DB_USER")
-	pass := os.Getenv("DB_PASSWORD")
-	ssl := os.Getenv("DB_SSLMODE")
+type sqlDB interface {
+	SetMaxOpenConns(n int)
+	SetMaxIdleConns(n int)
+	SetConnMaxLifetime(d time.Duration)
+	SetConnMaxIdleTime(d time.Duration)
+}
 
-	dsn := fmt.Sprintf(
+var (
+	openGorm = func(dialector gorm.Dialector, cfg *gorm.Config) (*gorm.DB, error) {
+		return gorm.Open(dialector, cfg)
+	}
+	getSQLDB    = defaultGetSQLDB
+	autoMigrate = defaultAutoMigrate
+	openFromEnv = OpenFromEnv
+	fatalf      = log.Fatalf
+)
+
+func defaultGetSQLDB(database *gorm.DB) (sqlDB, error) {
+	return database.DB()
+}
+
+func defaultAutoMigrate(database *gorm.DB) error {
+	return database.AutoMigrate(&model.User{}, &model.Project{}, &model.Task{}, &model.Comment{})
+}
+
+func LoadConfigFromEnv() Config {
+	return Config{
+		Host:         os.Getenv("DB_HOST"),
+		Port:         os.Getenv("DB_PORT"),
+		DBName:       os.Getenv("DB_NAME"),
+		User:         os.Getenv("DB_USER"),
+		Password:     os.Getenv("DB_PASSWORD"),
+		SSLMode:      os.Getenv("DB_SSLMODE"),
+		MaxOpenConns: config.GetEnvInt("DB_MAX_OPEN_CONNS", 10),
+		MaxIdleConns: config.GetEnvInt("DB_MAX_IDLE_CONNS", 5),
+	}
+}
+
+func BuildDSN(cfg Config) string {
+	return fmt.Sprintf(
 		"host=%s port=%s dbname=%s user=%s password=%s sslmode=%s TimeZone=UTC",
-		host, port, name, user, pass, ssl,
+		cfg.Host, cfg.Port, cfg.DBName, cfg.User, cfg.Password, cfg.SSLMode,
 	)
+}
 
+func OpenFromEnv() (*gorm.DB, error) {
+	return Open(LoadConfigFromEnv())
+}
+
+func Open(cfg Config) (*gorm.DB, error) {
 	gormCfg := &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Warn),
 	}
 
-	database, err := gorm.Open(postgres.Open(dsn), gormCfg)
+	database, err := openGorm(postgres.Open(BuildDSN(cfg)), gormCfg)
 	if err != nil {
-		log.Fatalf("db open failed: %v", err)
+		return nil, err
 	}
 
-	sqlDB, err := database.DB()
+	sqlConn, err := getSQLDB(database)
 	if err != nil {
-		log.Fatalf("db() failed: %v", err)
+		return nil, err
 	}
 
-	sqlDB.SetMaxOpenConns(getEnvInt("DB_MAX_OPEN_CONNS", 10))
-	sqlDB.SetMaxIdleConns(getEnvInt("DB_MAX_IDLE_CONNS", 5))
-	sqlDB.SetConnMaxLifetime(30 * time.Minute)
-	sqlDB.SetConnMaxIdleTime(5 * time.Minute)
+	sqlConn.SetMaxOpenConns(cfg.MaxOpenConns)
+	sqlConn.SetMaxIdleConns(cfg.MaxIdleConns)
+	sqlConn.SetConnMaxLifetime(30 * time.Minute)
+	sqlConn.SetConnMaxIdleTime(5 * time.Minute)
 
-	if err := database.AutoMigrate(&model.User{}, &model.Project{}, &model.Task{}, &model.Comment{}); err != nil {
-		log.Fatalf("db migrate failed: %v", err)
+	if err := autoMigrate(database); err != nil {
+		return nil, err
 	}
 
-	return database
+	return database, nil
 }
 
-func getEnvInt(key string, def int) int {
-	v := os.Getenv(key)
-	if v == "" {
-		return def
-	}
-	n, err := strconv.Atoi(v)
+func MustOpen() *gorm.DB {
+	database, err := openFromEnv()
 	if err != nil {
-		return def
+		fatalf("db open failed: %v", err)
 	}
-	return n
+	return database
 }

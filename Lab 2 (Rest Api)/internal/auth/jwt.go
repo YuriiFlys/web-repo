@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"project-management/internal/config"
 	"project-management/internal/model"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -24,7 +25,7 @@ type Claims struct {
 }
 
 func IssueToken(user model.User) (string, error) {
-	ttl := time.Duration(getEnvInt("JWT_TTL_MINUTES", defaultTokenTTLMinutes)) * time.Minute
+	ttl := time.Duration(config.GetEnvInt("JWT_TTL_MINUTES", defaultTokenTTLMinutes)) * time.Minute
 	now := time.Now().UTC()
 
 	claims := Claims{
@@ -56,11 +57,7 @@ func ParseToken(tokenStr string) (*Claims, error) {
 		return nil, ErrInvalidToken
 	}
 
-	claims, ok := parsed.Claims.(*Claims)
-	if !ok || !parsed.Valid {
-		return nil, ErrInvalidToken
-	}
-
+	claims := parsed.Claims.(*Claims)
 	return claims, nil
 }
 
@@ -70,16 +67,4 @@ func secret() string {
 		return "dev-secret"
 	}
 	return secret
-}
-
-func getEnvInt(key string, def int) int {
-	v := os.Getenv(key)
-	if v == "" {
-		return def
-	}
-	n, err := strconv.Atoi(v)
-	if err != nil {
-		return def
-	}
-	return n
 }

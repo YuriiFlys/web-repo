@@ -39,7 +39,7 @@ Desktop.ini
 *.out
 *.prof
 *.coverprofile
-coverage.*
+coverage
 cover.out
 
 # =========================
@@ -48,6 +48,7 @@ cover.out
 *.log
 *.tmp
 *.temp
+.gocache/
 tmp/
 temp/
 out/

@@ -1,89 +1,38 @@
 # Project Management REST API
 
-![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go&logoColor=white)
-![Gin](https://img.shields.io/badge/Gin-Framework-00B386)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Go](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go&logoColor=white)
+![Gin](https://img.shields.io/badge/Gin-1.11-00B386)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
 ![Swagger](https://img.shields.io/badge/Swagger-UI-85EA2D?logo=swagger&logoColor=black)
 
-A production-style REST API built with **Go + Gin + GORM** for managing **Projects**, **Tasks**, and **Comments**.
-Includes **pagination**, **sorting**, **filtering**, nested routes, and **Swagger UI** powered by **swaggo**.
+REST API for a project management system built with Go, Gin, GORM, and PostgreSQL. The service supports authentication, project and task management, nested comment resources, Swagger documentation, and automated test coverage for both unit and integration scenarios.
 
----
+## Overview
 
-## Table of Contents
+The API exposes endpoints for:
 
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Data Model](#data-model)
-- [Quick Start](#quick-start)
-  - [1) Run PostgreSQL (Docker)](#1-run-postgresql-docker)
-  - [2) Configure .env](#2-configure-env)
-  - [3) Run API](#3-run-api)
-- [Swagger](#swagger)
-- [Authentication](#authentication)
-- [API Overview](#api-overview)
-  - [Auth](#auth)
-  - [Projects](#projects)
-  - [Tasks](#tasks)
-  - [Comments](#comments)
-  - [Users](#users)
-- [Query Parameters](#query-parameters)
-  - [Pagination](#pagination)
-  - [Sorting](#sorting)
-  - [Filtering](#filtering)
-  - [Includes](#includes)
-- [Examples (cURL)](#examples-curl)
-- [HTTP Status Codes](#http-status-codes)
-- [Project Structure](#project-structure)
+- User registration and login with JWT-based authentication
+- Project management with filtering, sorting, pagination, and search
+- Task management with project-level nesting and optional due dates
+- Comment management with task-level nesting
+- Swagger UI for interactive API exploration
 
----
+Base API path: `/api`
 
-## Features
+## Technology Stack
 
-- CRUD for **Projects**, **Tasks**, **Comments**
-- Relations:
-  - Project **has many** Tasks
-  - Task **has many** Comments
-- Nested endpoints:
-  - /projects/{projectId}/tasks
-  - /tasks/{taskId}/comments
-- Pagination on all list endpoints (page, pageSize)
-- Sorting on list endpoints (sort)
-- Filtering:
-  - Projects: status, q
-  - Tasks: projectId, status, ssigneeId, dueFrom, dueTo
-  - Comments: 	askId, uthor
-- Swagger docs + Swagger UI
-- JWT auth with protected routes
+- Go 1.26
+- Gin
+- GORM
+- PostgreSQL
+- Swagger via `swaggo/swag` and `gin-swagger`
 
----
-## Tech Stack
+## Getting Started
 
-- **Go**
-- **Gin** (HTTP framework)
-- **GORM** (ORM)
-- **PostgreSQL**
-- **swaggo/swag** + **gin-swagger** (OpenAPI/Swagger docs + UI)
+### 1. Configure PostgreSQL
 
----
+Create `docker/.env`:
 
-## Data Model
-
-```text
-Project (1) ──── (N) Task (1) ──── (N) Comment
-````
-
-* **Project**: title, description, status (`active|archived`)
-* **Task**: projectId, title, status (`todo|in_progress|done`), assigneeId, dueDate
-* **Comment**: taskId, author, text
-
----
-
-## Quick Start
-
-### 1) Run PostgreSQL (Docker)
-
-Create `.env` in the `/docker` directory:
 ```env
 POSTGRES_DB=project_management
 POSTGRES_USER=postgres
@@ -91,296 +40,201 @@ POSTGRES_PASSWORD=postgres
 DB_PORT=5435
 ```
 
-If your `docker-compose.yml` is inside `/docker`:
+Start the database:
 
 ```bash
-docker compose docker/docker-compose.yml up -d
+docker compose -f docker/docker-compose.yml --env-file docker/.env up -d
 ```
 
+### 2. Configure the API
 
-### 2) Configure .env
-
-Create `.env` in the repository root:
+Create `.env` in the project root:
 
 ```env
 APP_PORT=8080
+CORS_ORIGIN=http://localhost:4200
 
-# API connection params
-DB_HOST=example
+DB_HOST=localhost
 DB_PORT=5435
 DB_NAME=project_management
-DB_USER=example
-DB_PASSWORD=example
+DB_USER=postgres
+DB_PASSWORD=postgres
 DB_SSLMODE=disable
 ```
 
-### 3) Run API
+### 3. Run the service
 
 ```bash
 go mod tidy
 go run .
 ```
 
-Server will start at:
-
-* `http://localhost:8080` (default)
-* or `http://localhost:<APP_PORT>`
-
----
+The API starts on `http://localhost:8080` by default.
 
 ## Swagger
 
-Swagger UI:
+Swagger UI is available at:
 
-* `http://localhost:<APP_PORT>/swagger/index.html`
+```text
+http://localhost:8080/swagger/index.html
+```
 
-Regenerate Swagger docs:
+To regenerate the Swagger assets:
 
 ```bash
 swag init -g main.go
 ```
 
-Generated output:
-
-* `docs/docs.go`
-* `docs/swagger.json`
-* `docs/swagger.yaml`
-
----
+Generated files are written to `docs/`.
 
 ## Authentication
 
-All API endpoints under `/api` are protected by JWT **except**:
+Public endpoints:
 
-- `POST /auth/register`
-- `POST /auth/login`
+- `POST /api/auth/register`
+- `POST /api/auth/login`
 
-Use the token from login/register responses and send it as a bearer token:
+Protected endpoints require a bearer token:
 
-```
+```text
 Authorization: Bearer <token>
 ```
 
-You can validate a token with `GET /auth/me`.
+The authenticated user can be retrieved with `GET /api/auth/me`.
 
----
-
-## API Overview
-
-Base path: `/api`
-
-### Auth
-
-* `POST /auth/register`
-* `POST /auth/login`
-* `GET  /auth/me` (protected)
+## Resource Summary
 
 ### Projects
 
-* `GET    /projects`
-  Query: `page, pageSize, sort, status, q, include=tasks`
-* `POST   /projects`
-* `GET    /projects/{id}`
-  Query: `include=tasks`
-* `PUT    /projects/{id}`
-* `DELETE /projects/{id}`
-* `GET    /projects/{projectId}/tasks`
-  Query: `page, pageSize, sort, status, assigneeId`
-* `POST   /projects/{projectId}/tasks`
+- `GET /api/projects`
+- `POST /api/projects`
+- `GET /api/projects/{id}`
+- `PUT /api/projects/{id}`
+- `DELETE /api/projects/{id}`
+- `GET /api/projects/{projectId}/tasks`
+- `POST /api/projects/{projectId}/tasks`
 
 ### Tasks
 
-* `GET    /tasks`
-  Query: `page, pageSize, sort, projectId, status, assigneeId, dueFrom, dueTo, include=comments`
-* `POST   /tasks`
-* `GET    /tasks/{id}`
-  Query: `include=comments`
-* `PUT    /tasks/{id}`
-  Note: send `{"dueDate": null}` to clear due date
-* `DELETE /tasks/{id}`
-* `GET    /tasks/{taskId}/comments`
-  Query: `page, pageSize, sort, author`
-* `POST   /tasks/{taskId}/comments`
+- `GET /api/tasks`
+- `POST /api/tasks`
+- `GET /api/tasks/{id}`
+- `PUT /api/tasks/{id}`
+- `DELETE /api/tasks/{id}`
+- `GET /api/tasks/{taskId}/comments`
+- `POST /api/tasks/{taskId}/comments`
 
 ### Comments
 
-* `GET    /comments`
-  Query: `page, pageSize, sort, taskId, author`
-* `POST   /comments`
-* `GET    /comments/{id}`
-* `PUT    /comments/{id}`
-* `DELETE /comments/{id}`
+- `GET /api/comments`
+- `POST /api/comments`
+- `GET /api/comments/{id}`
+- `PUT /api/comments/{id}`
+- `DELETE /api/comments/{id}`
 
 ### Users
 
-* `GET /users` (protected)
+- `GET /api/users`
 
----
+## Query Capabilities
 
-## Query Parameters
+List endpoints support pagination through:
 
-### Pagination
+- `page`
+- `pageSize`
 
-Supported by all list endpoints:
+Sorting is available through:
 
-* `page` (default: `1`)
-* `pageSize` (default: `20`, max: `100`)
+- `sort=createdAt`
+- `sort=-createdAt`
 
-Example:
+Supported filters include:
 
-```bash
-curl "http://localhost:8080/api/projects?page=2&pageSize=10"
-```
+- Projects: `status`, `q`
+- Tasks: `projectId`, `status`, `assigneeId`, `dueFrom`, `dueTo`
+- Comments: `taskId`, `author`
 
-### Sorting
+Optional eager loading:
 
-Use `sort` with a comma-separated list:
+- Projects: `include=tasks`
+- Tasks: `include=comments`
 
-* `createdAt` = ascending
-* `-createdAt` = descending
+## Testing
 
-Example:
-
-```bash
-curl "http://localhost:8080/api/tasks?sort=title,-createdAt"
-```
-
-### Filtering
-
-**Projects**
-
-* `status=active|archived`
-* `q=<search>` (search in title/description)
-
-**Tasks**
-
-* `projectId=<id>`
-* `status=todo|in_progress|done`
-* `assigneeId=<userId>`
-* `dueFrom=YYYY-MM-DD`
-* `dueTo=YYYY-MM-DD`
-
-**Comments**
-
-* `taskId=<id>`
-* `author=<name>`
-
-### Includes
-
-Optional eager-load:
-
-* Projects: `include=tasks`
-* Tasks: `include=comments`
-
-Example:
+Run the standard Go test suite:
 
 ```bash
-curl "http://localhost:8080/api/projects/1?include=tasks"
+go test ./...
 ```
 
----
+Unit tests are present across the main backend layers, including:
 
-## Examples (cURL)
+- `internal/auth` for JWT behavior
+- `internal/config` for environment loading
+- `internal/db` for connection setup and migration wiring
+- `internal/handler` for HTTP handlers and error paths
+- `internal/httpx` for query parsing and error helpers
+- `internal/middleware` for auth middleware
+- `internal/service` for business logic
 
-### Register
+Run the PowerShell helper for unit and integration coverage:
+
+```powershell
+.\scripts\test-all.ps1
+```
+
+Use a custom environment file if needed:
+
+```powershell
+.\scripts\test-all.ps1 -EnvFile .env.test
+```
+
+Generate coverage outputs:
+
+```powershell
+.\scripts\test-all.ps1 -Coverage
+```
+
+Integration tests are opt-in and use a real PostgreSQL database:
 
 ```bash
-curl -i -X POST "http://localhost:8080/api/auth/register" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Demo User","email":"demo@example.com","password":"secret123"}'
+go test -tags=integration ./tests/integration/...
 ```
 
-### Login
+The integration suite exercises repository behavior against PostgreSQL, including:
 
-```bash
-curl -i -X POST "http://localhost:8080/api/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"demo@example.com","password":"secret123"}'
-```
+- auth repository persistence and lookup
+- project, task, and comment CRUD flows
+- filtering, sorting, pagination, and include behavior
+- user listing
+- database reset and migration setup for test runs
 
-### Create a Project (authenticated)
-
-```bash
-curl -i -X POST "http://localhost:8080/api/projects" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <token>" \
-  -d '{"title":"Demo Project","description":"for testing","status":"active"}'
-```
-
-### List Projects (filter + search + sort + paging)
-
-```bash
-curl -i "http://localhost:8080/api/projects?status=active&q=demo&sort=-createdAt&page=1&pageSize=5" \
-  -H "Authorization: Bearer <token>"
-```
-
-### Create a Task under Project (nested)
-
-```bash
-curl -i -X POST "http://localhost:8080/api/projects/1/tasks" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <token>" \
-  -d '{"title":"Setup auth","status":"todo","assigneeId":1}'
-```
-
-### List Tasks (filters)
-
-```bash
-curl -i "http://localhost:8080/api/tasks?projectId=1&status=todo&assigneeId=1&sort=-createdAt" \
-  -H "Authorization: Bearer <token>"
-```
-
-### Create Comment under Task
-
-```bash
-curl -i -X POST "http://localhost:8080/api/tasks/1/comments" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <token>" \
-  -d '{"author":"Mentor","text":"Looks good"}'
-```
-
-### Clear Task dueDate
-
-```bash
-curl -i -X PUT "http://localhost:8080/api/tasks/1" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <token>" \
-  -d '{"dueDate": null}'
-```
-
----
-
-## HTTP Status Codes
-
-* `200 OK` — successful GET/PUT
-* `201 Created` — successful POST
-* `204 No Content` — successful DELETE
-* `400 Bad Request` — invalid JSON / validation errors
-* `404 Not Found` — entity not found
-
-Error response shape:
-
-```json
-{ "code": "BAD_REQUEST", "message": "..." }
-```
-
----
+The integration suite truncates application tables before each test run. Do not point it at a database containing important data.
 
 ## Project Structure
 
 ```text
 .
-├── main.go
-├── go.mod
-├── internal
-│   ├── db          # DB connection + migrations
-│   ├── model       # GORM models
-│   ├── handler     # Gin handlers/controllers
-│   └── httpx       # shared helpers (errors, query parsing)
-├── docs            # generated swagger docs
-└── docker
-    └── docker-compose.yml
+|-- main.go
+|-- go.mod
+|-- docker/
+|   `-- docker-compose.yml
+|-- docs/
+|   |-- swagger.json
+|   |-- swagger.yaml
+|   `-- docs.go
+|-- internal/
+|   |-- auth/
+|   |-- config/
+|   |-- db/
+|   |-- handler/
+|   |-- httpx/
+|   |-- middleware/
+|   |-- model/
+|   |-- repository/
+|   `-- service/
+|-- scripts/
+|   `-- test-all.ps1
+`-- tests/
+    `-- integration/
 ```
-
----
-

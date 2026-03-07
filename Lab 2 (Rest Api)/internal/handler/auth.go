@@ -6,18 +6,17 @@ import (
 	"strings"
 	"time"
 
-	"project-management/internal/auth"
 	"project-management/internal/httpx"
-	"project-management/internal/model"
+	"project-management/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
-type AuthHandler struct{ db *gorm.DB }
+type AuthHandler struct{ service service.AuthService }
 
-func NewAuthHandler(db *gorm.DB) *AuthHandler { return &AuthHandler{db: db} }
+func NewAuthHandler(service service.AuthService) *AuthHandler { return &AuthHandler{service: service} }
 
 type RegisterRequest struct {
 	Email    string `json:"email" binding:"required,email"`
@@ -51,17 +50,6 @@ func (h *AuthHandler) RegisterProtected(r *gin.RouterGroup) {
 	r.GET("/auth/me", h.Me)
 }
 
-// RegisterUser godoc
-// @Summary Register new user
-// @Description Create a user account and return JWT token.
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param body body RegisterRequest true "Register payload"
-// @Success 201 {object} AuthResponse
-// @Failure 400 {object} httpx.APIError
-// @Failure 500 {object} httpx.APIError
-// @Router /auth/register [post]
 func (h *AuthHandler) RegisterUser(c *gin.Context) {
 	var body RegisterRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -69,38 +57,17 @@ func (h *AuthHandler) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	body.Email = strings.TrimSpace(strings.ToLower(body.Email))
-	body.Name = strings.TrimSpace(body.Name)
-
-	var existing model.User
-	if err := h.db.Where("email = ?", body.Email).First(&existing).Error; err == nil {
+	user, token, err := h.service.Register(c.Request.Context(), service.RegisterInput{
+		Email:    body.Email,
+		Password: body.Password,
+		Name:     body.Name,
+	})
+	if errors.Is(err, service.ErrEmailInUse) {
 		c.JSON(http.StatusBadRequest, httpx.Err(httpx.CodeBadRequest, "email already in use"))
 		return
-	} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		c.JSON(http.StatusInternalServerError, httpx.Err("INTERNAL", err.Error()))
-		return
 	}
-
-	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, httpx.Err("INTERNAL", "failed to hash password"))
-		return
-	}
-
-	user := model.User{
-		Email:        body.Email,
-		Name:         body.Name,
-		PasswordHash: string(hash),
-	}
-
-	if err := h.db.Create(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, httpx.Err("INTERNAL", err.Error()))
-		return
-	}
-
-	token, err := auth.IssueToken(user)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, httpx.Err("INTERNAL", "failed to issue token"))
 		return
 	}
 
@@ -115,18 +82,6 @@ func (h *AuthHandler) RegisterUser(c *gin.Context) {
 	})
 }
 
-// Login godoc
-// @Summary Login
-// @Description Authenticate user and return JWT token.
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param body body LoginRequest true "Login payload"
-// @Success 200 {object} AuthResponse
-// @Failure 400 {object} httpx.APIError
-// @Failure 401 {object} httpx.APIError
-// @Failure 500 {object} httpx.APIError
-// @Router /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var body LoginRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -134,26 +89,16 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	email := strings.TrimSpace(strings.ToLower(body.Email))
-
-	var user model.User
-	if err := h.db.Where("email = ?", email).First(&user).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+	user, token, err := h.service.Login(c.Request.Context(), service.LoginInput{
+		Email:    strings.TrimSpace(strings.ToLower(body.Email)),
+		Password: body.Password,
+	})
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) || errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 			c.JSON(http.StatusUnauthorized, httpx.Err(httpx.CodeUnauthorized, "invalid credentials"))
 			return
 		}
 		c.JSON(http.StatusInternalServerError, httpx.Err("INTERNAL", err.Error()))
-		return
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(body.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, httpx.Err(httpx.CodeUnauthorized, "invalid credentials"))
-		return
-	}
-
-	token, err := auth.IssueToken(user)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, httpx.Err("INTERNAL", "failed to issue token"))
 		return
 	}
 
@@ -168,15 +113,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
-// Me godoc
-// @Summary Current user
-// @Description Return the current authenticated user.
-// @Tags Auth
-// @Produce json
-// @Success 200 {object} AuthUser
-// @Failure 401 {object} httpx.APIError
-// @Failure 500 {object} httpx.APIError
-// @Router /auth/me [get]
 func (h *AuthHandler) Me(c *gin.Context) {
 	userIDRaw, ok := c.Get("userID")
 	if !ok {
@@ -190,8 +126,8 @@ func (h *AuthHandler) Me(c *gin.Context) {
 		return
 	}
 
-	var user model.User
-	if err := h.db.First(&user, userID).Error; err != nil {
+	user, err := h.service.GetByID(c.Request.Context(), userID)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, httpx.Err("INTERNAL", err.Error()))
 		return
 	}

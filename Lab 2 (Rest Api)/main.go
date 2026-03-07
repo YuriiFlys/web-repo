@@ -13,6 +13,8 @@ import (
 	"project-management/internal/db"
 	"project-management/internal/handler"
 	"project-management/internal/middleware"
+	"project-management/internal/repository"
+	"project-management/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -37,16 +39,16 @@ func main() {
 
 	api := r.Group("/api")
 
-	authHandler := handler.NewAuthHandler(database)
+	authHandler := handler.NewAuthHandler(service.NewAuthService(repository.NewAuthRepository(database)))
 	authHandler.Register(api)
 
 	protected := api.Group("/")
 	protected.Use(middleware.JWTAuth())
 	authHandler.RegisterProtected(protected)
-	handler.NewUserHandler(database).Register(protected)
-	handler.NewProjectHandler(database).Register(protected)
-	handler.NewTaskHandler(database).Register(protected)
-	handler.NewCommentHandler(database).Register(protected)
+	handler.NewUserHandler(service.NewUserService(repository.NewUserRepository(database))).Register(protected)
+	handler.NewProjectHandler(service.NewProjectService(repository.NewProjectRepository(database))).Register(protected)
+	handler.NewTaskHandler(service.NewTaskService(repository.NewTaskRepository(database))).Register(protected)
+	handler.NewCommentHandler(service.NewCommentService(repository.NewCommentRepository(database))).Register(protected)
 
 	port := os.Getenv("APP_PORT")
 	if port == "" {

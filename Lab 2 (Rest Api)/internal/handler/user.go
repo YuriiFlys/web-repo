@@ -4,15 +4,14 @@ import (
 	"net/http"
 
 	"project-management/internal/httpx"
-	"project-management/internal/model"
+	"project-management/internal/service"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
-type UserHandler struct{ db *gorm.DB }
+type UserHandler struct{ service service.UserService }
 
-func NewUserHandler(db *gorm.DB) *UserHandler { return &UserHandler{db: db} }
+func NewUserHandler(service service.UserService) *UserHandler { return &UserHandler{service: service} }
 
 type UserSummary struct {
 	ID    uint   `json:"id"`
@@ -24,17 +23,9 @@ func (h *UserHandler) Register(r *gin.RouterGroup) {
 	r.GET("/users", h.List)
 }
 
-// List godoc
-// @Summary List users
-// @Description List users for assignment.
-// @Tags Users
-// @Produce json
-// @Success 200 {object} UsersListResponse
-// @Failure 500 {object} httpx.APIError
-// @Router /users [get]
 func (h *UserHandler) List(c *gin.Context) {
-	var users []model.User
-	if err := h.db.Model(&model.User{}).Find(&users).Error; err != nil {
+	users, err := h.service.List(c.Request.Context())
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, httpx.Err("INTERNAL", err.Error()))
 		return
 	}
