@@ -13,7 +13,7 @@ jobs:
   deploy:
     name: Test, Build, Push and Deploy
     runs-on: ubuntu-latest
-    environment: GCP
+    environment: GCP_DEPLOY
 
     permissions:
       contents: read
