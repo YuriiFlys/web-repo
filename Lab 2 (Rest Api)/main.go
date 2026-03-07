@@ -24,7 +24,7 @@ import (
 
 func init() {
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+		log.Println("No .env file found, relying on environment variables")
 	}
 }
 
