@@ -5,102 +5,332 @@
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-0EA5E9?logo=tailwindcss&logoColor=white)
 ![RxJS](https://img.shields.io/badge/RxJS-7-B7178C?logo=reactivex&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=nodedotjs&logoColor=white)
+![GCP](https://img.shields.io/badge/-Google%20Cloud%20Platform-4285F4?style=flat&logo=google%20cloud&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=flat-square&logo=firebase&logoColor=white%22/%3E)
 
-Monorepo containing:
-- **Lab 3 (Patters)**: Contains implementation of **Builder**, **Bridge** and **Mediator** patterns.
-- **Lab 2 (Rest Api)**: Project Management REST API (Go + Gin + GORM + PostgreSQL).
-- **Lab 3 (Angular Frontend)**: Angular 21 frontend with Tailwind CSS.
+A monorepo that contains multiple university/lab projects focused on backend development, frontend development, design patterns, containerization, and cloud deployment.
 
-# Quick Start
+## Links
 
-## Lab 1: Patterns
+- [Project management app](https://project-management-489517.web.app)
+- [Backend API](https://pm-api-568211409158.europe-central2.run.app/)
+- [Swagger UI](https://pm-api-568211409158.europe-central2.run.app/swagger/index.html)
 
+## Projects Included
 
-### 1) Go to Lab 1 directory:
-```
+### 1. Lab 1 — Patterns
+A Go project that demonstrates several classic design patterns:
+
+- Builder
+- Bridge
+- Mediator
+
+### 2. Lab 2 — Project Management REST API
+A backend application built with:
+
+- Go
+- Gin
+- GORM
+- PostgreSQL
+- JWT Authentication
+- Swagger
+
+This API provides project management functionality with authentication, database integration, and documented endpoints.
+
+### 3. Lab 3 — Angular Frontend
+A frontend application built with:
+
+- Angular
+- TypeScript
+- Tailwind CSS
+- RxJS
+
+This frontend works with the REST API from Lab 2 and provides a user interface for authentication and project/task management.
+
+---
+
+## Repository Structure
+
+```text
+web-repo/
+│
+├── Lab 1 (Patterns)/
+│   └── Go implementation of design patterns
+│
+├── Lab 2 (Rest Api)/
+│   └── Project Management REST API (Go + Gin + GORM + PostgreSQL)
+│
+├── Lab 3 (Angular Frontend)/
+│   └── Angular frontend application
+│       └── pm-frontend/
+│
+└── .github/
+    └── workflows/
+````
+
+---
+
+## Tech Stack
+
+### Backend
+
+* Go
+* Gin
+* GORM
+* PostgreSQL
+* JWT
+* Swagger
+* Docker
+
+### Frontend
+
+* Angular
+* TypeScript
+* Tailwind CSS
+* RxJS
+* Playwright
+
+### DevOps / Deployment
+
+* Docker
+* GitHub Actions
+* Google Cloud Run
+* Google Cloud SQL
+* Google Artifact Registry
+* Firebase Hosting
+
+---
+
+## Quick Start
+
+## Lab 1 — Patterns
+
+```bash
 cd "Lab 1 (Patterns)"
-```
-
-### 2) Start the API
-
-```
 go mod tidy
 go run .
 ```
 
-## Lab 2: Project Management API
+---
 
-### 1)  Run PostgreSQL (Docker)
+## Lab 2 — REST API
 
-- Go to Lab 2 directory:
-```
+### 1. Navigate to the backend directory
+
+```bash
 cd "Lab 2 (Rest Api)"
 ```
 
-- Create `.env` in the `/docker` directory:
-```env
-POSTGRES_DB=project_management
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-DB_PORT=5435
-```
+### 2. Configure environment variables
 
-- If your `docker-compose.yml` is inside `/docker`:
-
-```bash
-docker compose docker/docker-compose.yml up -d
-```
-
-
-### 2) Configure .env
-
-- Create `.env` in the repository root:
+Create a `.env` file in the backend root:
 
 ```env
 APP_PORT=8080
 
-# API connection params
-DB_HOST=example
+DB_HOST=localhost
 DB_PORT=5435
 DB_NAME=project_management
-DB_USER=example
-DB_PASSWORD=example
+DB_USER=postgres
+DB_PASSWORD=postgres
 DB_SSLMODE=disable
+
+CORS_ORIGIN=http://localhost:4200
 ```
 
-### 3) Start the API
+### 3. Run PostgreSQL with Docker
 
+If you use the provided Docker setup for PostgreSQL:
+
+```bash
+docker compose -f docker/docker-compose.yml up -d
 ```
+
+### 4. Start the backend
+
+```bash
 go mod tidy
 go run .
 ```
 
-- The API starts at `http://localhost:8080` with base path `/api`.
+### 5. API access
 
-Optional: if you want a local Postgres instance, use Docker from `Lab 2 (Rest Api)/docker`.
+* Base URL: `http://localhost:8080/api`
+* Swagger UI: `http://localhost:8080/swagger/index.html`
 
-## Lab 3: Project Management frontend app
+---
 
-### 1) Start the Frontend
+## Lab 3 — Angular Frontend
 
+### 1. Navigate to the frontend directory
+
+```bash
+cd "Lab 3 (Angular Frontend)/pm-frontend"
 ```
-cd "Lab 3 (Angular Frontend)\pm-frontend"
+
+### 2. Install dependencies
+
+```bash
 npm install
+```
+
+### 3. Start the frontend
+
+```bash
 npm start
 ```
 
-- Open `http://localhost:4200`.
+### 4. Open in browser
 
-The frontend targets `http://localhost:8080/api` by default.
-
-## Repository Layout
-
-```
-Lab 2 (Rest Api)/          Go REST API + Swagger docs
-Lab 3 (Angular Frontend)/  Angular frontend (pm-frontend)
+```text
+http://localhost:4200
 ```
 
-## Notes
+The frontend communicates with the backend API and should be configured to use the backend base URL.
 
-- API uses JWT auth. Register or login first to get a token.
-- Frontend stores the token in `localStorage` and adds it as a Bearer token on requests.
+---
+
+## Authentication
+
+The backend uses JWT-based authentication.
+
+Typical flow:
+
+1. Register a new user
+2. Login with credentials
+3. Receive JWT token
+4. Use the token for authorized requests
+
+The frontend stores the token in `localStorage` and sends it in the `Authorization: Bearer <token>` header when required. This behavior is also reflected in the current repository notes. ([GitHub][1])
+
+---
+
+## Docker
+
+The backend is containerized with Docker.
+
+Typical usage:
+
+```bash
+docker build -t pm-api .
+docker run -p 8080:8080 pm-api
+```
+
+For local database development, PostgreSQL can be started with Docker Compose from the backend project. The current repository already documents a Docker-based PostgreSQL setup under `Lab 2 (Rest Api)/docker`. ([GitHub][1])
+
+---
+
+## CI/CD
+
+The backend uses GitHub Actions for CI/CD.
+
+Pipeline overview:
+
+1. Run automated Go tests
+2. Build Docker image
+3. Push image to Google Artifact Registry
+4. Deploy the new version to Google Cloud Run
+
+The frontend can be tested with Playwright and deployed separately to Firebase Hosting.
+
+---
+
+## Deployment Architecture
+
+### Backend
+
+* Hosted on **Google Cloud Run**
+* Container image stored in **Google Artifact Registry**
+* Database hosted on **Google Cloud SQL for PostgreSQL**
+
+### Frontend
+
+* Hosted on **Firebase Hosting**
+
+This setup provides a clean separation between:
+
+* frontend hosting
+* backend API hosting
+* managed database infrastructure
+
+---
+
+## Environment Configuration
+
+### Backend
+
+Example production/backend variables:
+
+```env
+APP_PORT=8080
+DB_HOST=/cloudsql/PROJECT_ID:REGION:INSTANCE_NAME
+DB_PORT=5432
+DB_NAME=project_management
+DB_USER=postgres
+DB_PASSWORD=your_password
+DB_SSLMODE=disable
+CORS_ORIGIN=https://your-frontend-domain.web.app
+```
+
+### Frontend
+
+Example production API configuration:
+
+```ts
+apiUrl: 'https://your-cloud-run-service-url/api'
+```
+
+---
+
+## Testing
+
+### Backend
+
+```bash
+go test ./...
+```
+
+### Frontend
+
+```bash
+npm test
+```
+
+### End-to-End
+
+Playwright is used for frontend E2E testing.
+
+```bash
+npx playwright test
+```
+
+---
+
+## Goals of the Repository
+
+This repository demonstrates practical skills in:
+
+* Go backend development
+* REST API design
+* Angular frontend development
+* PostgreSQL integration
+* JWT authentication
+* Docker containerization
+* Cloud deployment on GCP
+* CI/CD automation with GitHub Actions
+* Frontend hosting with Firebase
+
+---
+
+## Future Improvements
+
+Possible future enhancements:
+
+* add role-based access control
+* improve validation and error handling
+* add refresh token support
+* extend automated integration testing
+* add frontend deployment workflow
+* add custom domain configuration
+
+---
