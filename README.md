@@ -60,7 +60,7 @@ web-repo/
 ├── Lab 2 (Rest Api)/
 │   └── Project Management REST API (Go + Gin + GORM + PostgreSQL)
 │
-├── Lab 3 (Angular Frontend)/
+├── frontend/
 │   └── Angular frontend application
 │       └── pm-frontend/
 │
@@ -165,7 +165,7 @@ go run .
 ### 1. Navigate to the frontend directory
 
 ```bash
-cd "Lab 3 (Angular Frontend)/pm-frontend"
+cd "frontend/pm-frontend"
 ```
 
 ### 2. Install dependencies

@@ -66,7 +66,7 @@ http://localhost:4200
 
 ## End-to-End Testing
 
-Playwright is configured at the parent workspace level in `Lab 3 (Angular Frontend)`, not inside `pm-frontend`.
+Playwright is configured at the parent workspace level in `frontend`, not inside `pm-frontend`.
 
 Relevant files:
 
@@ -74,7 +74,7 @@ Relevant files:
 - `../tests/app.spec.ts`
 - `../package.json`
 
-Available e2e commands from `Lab 3 (Angular Frontend)`:
+Available e2e commands from `frontend`:
 
 - `npm run test:e2e`
 - `npm run test:e2e:ui`
