@@ -1,0 +1,26 @@
+name: pm-api-fy
+services:
+  - name: web-repo-backend
+    github:
+      repo: YuriiFlys/web-repo
+      branch: main
+      deploy_on_push: true
+    dockerfile_path: backend/Dockerfile
+    source_dir: backend
+    http_port: 8080
+    envs:
+      - key: DATABASE_URL
+        scope: RUN_AND_BUILD_TIME
+        value: ${dev-db-857414.DATABASE_URL}
+      - key: JWT_SECRET
+        scope: RUN_AND_BUILD_TIME
+        value: ${JWT_SECRET}
+        type: SECRET
+      - key: CORS_ORIGIN
+        scope: RUN_AND_BUILD_TIME
+        value: ${CORS_ORIGIN}
+databases:
+  - name: dev-db-857414
+    engine: PG
+    version: "17"
+    production: false

@@ -3,7 +3,9 @@ package db
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"project-management/internal/config"
@@ -50,7 +52,55 @@ func defaultAutoMigrate(database *gorm.DB) error {
 	return database.AutoMigrate(&model.User{}, &model.Project{}, &model.Task{}, &model.Comment{})
 }
 
+func parseDatabaseURL(rawURL string) (Config, error) {
+	// DO іноді дає postgres:// замість postgresql://
+	normalized := strings.Replace(rawURL, "postgres://", "postgresql://", 1)
+
+	u, err := url.Parse(normalized)
+	if err != nil {
+		return Config{}, fmt.Errorf("url.Parse: %w", err)
+	}
+
+	if u.Host == "" {
+		return Config{}, fmt.Errorf("empty host in DATABASE_URL")
+	}
+
+	password, _ := u.User.Password()
+
+	port := u.Port()
+	if port == "" {
+		port = "5432"
+	}
+
+	dbName := strings.TrimPrefix(u.Path, "/")
+
+	return Config{
+		Host:         u.Hostname(),
+		Port:         port,
+		DBName:       dbName,
+		User:         u.User.Username(),
+		Password:     password,
+		SSLMode:      "require",
+		MaxOpenConns: config.GetEnvInt("DB_MAX_OPEN_CONNS", 10),
+		MaxIdleConns: config.GetEnvInt("DB_MAX_IDLE_CONNS", 5),
+	}, nil
+}
+
 func LoadConfigFromEnv() Config {
+	if rawURL := os.Getenv("DATABASE_URL"); rawURL != "" {
+		log.Printf("info: DATABASE_URL found, parsing...")
+		cfg, err := parseDatabaseURL(rawURL)
+		if err != nil {
+			log.Printf("warn: failed to parse DATABASE_URL: %v", err)
+		} else {
+			log.Printf("info: DB config — host=%s port=%s db=%s user=%s",
+				cfg.Host, cfg.Port, cfg.DBName, cfg.User)
+			return cfg
+		}
+	} else {
+		log.Printf("info: DATABASE_URL not found, using individual env vars")
+	}
+
 	return Config{
 		Host:         os.Getenv("DB_HOST"),
 		Port:         os.Getenv("DB_PORT"),
