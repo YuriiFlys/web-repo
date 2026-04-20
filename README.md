@@ -5,7 +5,7 @@
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-0EA5E9?logo=tailwindcss&logoColor=white)
 ![RxJS](https://img.shields.io/badge/RxJS-7-B7178C?logo=reactivex&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=nodedotjs&logoColor=white)
-![GCP](https://img.shields.io/badge/-Google%20Cloud%20Platform-4285F4?style=flat&logo=google%20cloud&logoColor=white)
+![Digital Ocean](https://img.shields.io/badge/DigitalOcean-0080FF?style=for-the-badge&logo=digitalocean&logoColor=white)
 ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=flat-square&logo=firebase&logoColor=white%22/%3E)
 
 A monorepo that contains multiple university/lab projects focused on backend development, frontend development, design patterns, containerization, and cloud deployment.
@@ -13,8 +13,8 @@ A monorepo that contains multiple university/lab projects focused on backend dev
 ## Links
 
 - [Project management app](https://project-management-489517.web.app)
-- [Backend API](https://pm-api-568211409158.europe-central2.run.app/)
-- [Swagger UI](https://pm-api-568211409158.europe-central2.run.app/swagger/index.html)
+- [Backend API](https://pm-api-fy-hmvaq.ondigitalocean.app/)
+- [Swagger UI](https://pm-api-fy-hmvaq.ondigitalocean.app/swagger/index.html)
 
 ## Projects Included
 
